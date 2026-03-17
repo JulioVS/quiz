@@ -11,9 +11,14 @@ import com.app.quiz.model.Question;
 public class QuestionsService {
 
     private final Map<Integer, Question> questions = new HashMap<>();
+    private int nextId = 0; // To keep track of the next available ID for new quizzes
 
     public QuestionsService() {
         loadQuizzes(); // Load initial quizzes when the service is instantiated
+    }
+
+    public int getNextId() {
+        return nextId++; // Return the next available ID and increment the counter
     }
 
     public Question getQuizById(int id) {
@@ -23,11 +28,11 @@ public class QuestionsService {
     public ArrayList<Question> getAllQuizzes() {
         return new ArrayList<>(questions.values()); // Retrieve all quizzes
     }
-    
+
     public ArrayList<Question> loadQuizzes() {
 
         // Logic to load quizzes from a data source (e.g., database, file, etc.)
-        Question q1 = new Question(1, "What is the capital of France?", new ArrayList<String>() {
+        Question q1 = new Question(getNextId(), "What is the capital of France?", new ArrayList<String>() {
             {
                 add("Berlin");
                 add("Madrid");
@@ -37,7 +42,7 @@ public class QuestionsService {
         }, "Paris");
         questions.put(q1.getId(), q1);
 
-        Question q2 = new Question(2, "What is the largest planet in our solar system?", new ArrayList<String>() {
+        Question q2 = new Question(getNextId(), "What is the largest planet in our solar system?", new ArrayList<String>() {
             {
                 add("Earth");
                 add("Jupiter");
@@ -47,7 +52,7 @@ public class QuestionsService {
         }, "Jupiter");
         questions.put(q2.getId(), q2);
 
-        Question q3 = new Question(3, "What is the chemical symbol for water?", new ArrayList<String>() {
+        Question q3 = new Question(getNextId(), "What is the chemical symbol for water?", new ArrayList<String>() {
             {
                 add("H2O");
                 add("O2");

@@ -8,6 +8,9 @@ import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.ModelAttribute;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.ui.Model;
+
+import java.util.ArrayList;
+
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
@@ -21,14 +24,14 @@ import com.app.quiz.service.QuizUserDetailsService;
 @Controller
 public class QuizController {
 
-    private final QuestionsService questionsService;
     private final QuizUserDetailsService userDetailsService;
+    private final QuestionsService questionsService;
     private final AuthenticationManager authenticationManager;
 
-    public QuizController(QuestionsService questionsService, QuizUserDetailsService userDetailsService,
+    public QuizController(QuizUserDetailsService userDetailsService, QuestionsService questionsService,
             AuthenticationManager authenticationManager) {
-        this.questionsService = questionsService;
         this.userDetailsService = userDetailsService;
+        this.questionsService = questionsService;
         this.authenticationManager = authenticationManager;
     }
 
@@ -58,11 +61,16 @@ public class QuizController {
 
         model.addAttribute("role", role); // Add the user's role to the model
 
+        // Get the list of quizzes and add it to the model
+        ArrayList<Question> quizzes = questionsService.getAllQuizzes();
+        model.addAttribute("quizzes", quizzes); // Add the list of quizzes to the model
+
         // Redirect to the appropriate page based on the role
         if ("ROLE_ADMIN".equals(role)) {
-            return "admin-home"; // Return the admin-home.html template for admin users
+            return "quiz-list"; // Return the quiz-list.html template for admin users
+
         } else {
-            return "user-home"; // Return the user-home.html template for regular users
+            return "quiz"; // Return the quiz.html template for regular users
         }
 
     }
@@ -117,16 +125,31 @@ public class QuizController {
     }
 
     @PostMapping("/add-quiz")
-    public String saveQuiz(@ModelAttribute Question quiz, Model model) {
+    public String saveQuiz(@ModelAttribute Question quiz, Model model, Authentication authentication) {
+
+        // Get the auhtenticated user's role
+        String role = authentication.getAuthorities().stream()
+                .map(auth -> auth.getAuthority())
+                .findFirst()
+                .orElse("ROLE_USER"); // Default to ROLE_USER if no role is found
+
+        if (!"ROLE_ADMIN".equals(role)) {
+            model.addAttribute("error", "You do not have permission to add a quiz.");
+            return "redirect:/add-quiz?error"; // Redirect to home with an error message if the user is not an admin
+        }
+
         // Logic to save the quiz to the database (e.g., quizService.save(quiz))
+        quiz.setId(questionsService.getNextId());
+        
         // Save the quiz using the appropriate service
         boolean success = questionsService.addQuiz(quiz);
 
         if (!success) {
             model.addAttribute("error", "An error occurred while saving the quiz.");
-            return "add-quiz"; // Return to the add-quiz page if there was an error
+            return "redirect:/add-quiz?error"; // Return to the add-quiz page if there was an error
         }
 
+        model.addAttribute("success", "Quiz added successfully!"); // Add a success message to the model
         return "redirect:/home"; // Redirect to the home page after saving the quiz
     }
 
@@ -160,6 +183,27 @@ public class QuizController {
             return "redirect:/home?error"; // Redirect to home with an error message if there was an error
         }
         return "redirect:/home?success"; // Redirect to home with a success message after deleting the quiz
+    }
+
+    @GetMapping("/take-quiz")
+    public String takeQuiz(Model model) {
+        model.addAttribute("quizzes", questionsService.getAllQuizzes()); // Add a list of quizzes to the model
+        return "take-quiz"; // Return the take-quiz.html template
+    }
+
+    @PostMapping("/submit-quiz")
+    public String submitQuiz(@ModelAttribute Question quiz, Model model) {
+        // Logic to evaluate the quiz answers and calculate the score
+        // For demonstration, we will just return a success message
+        model.addAttribute("message", "Quiz submitted successfully! Your score is: 100%");
+        return "quiz-result"; // Return the quiz-result.html template to display the result
+    }
+
+    @GetMapping("/results")
+    public String viewResults(Model model) {
+        // Logic to retrieve and display quiz results
+        // model.addAttribute("results", questionsService.getAllResults());
+        return "results"; // Return the results.html template to display the results
     }
 
 }
