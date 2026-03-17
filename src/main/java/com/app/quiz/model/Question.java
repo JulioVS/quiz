@@ -9,6 +9,10 @@ public class Question {
     private ArrayList<String> options = new ArrayList<>();
     private String correctAnswer;
 
+    public Question() {
+        // Default constructor
+    }
+    
     public Question(int id, String questionText, ArrayList<String> options, String correctAnswer) {
         this.id = id;
         this.questionText = questionText;

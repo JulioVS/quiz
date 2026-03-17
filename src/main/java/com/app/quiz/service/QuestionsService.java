@@ -12,6 +12,18 @@ public class QuestionsService {
 
     private final Map<Integer, Question> questions = new HashMap<>();
 
+    public QuestionsService() {
+        loadQuizzes(); // Load initial quizzes when the service is instantiated
+    }
+
+    public Question getQuizById(int id) {
+        return questions.get(id); // Retrieve a quiz by its ID
+    }
+
+    public ArrayList<Question> getAllQuizzes() {
+        return new ArrayList<>(questions.values()); // Retrieve all quizzes
+    }
+    
     public ArrayList<Question> loadQuizzes() {
 
         // Logic to load quizzes from a data source (e.g., database, file, etc.)
