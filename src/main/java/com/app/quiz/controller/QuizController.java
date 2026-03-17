@@ -3,7 +3,10 @@ package com.app.quiz.controller;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping;
+import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.ModelAttribute;
+import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.ui.Model;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
@@ -11,15 +14,20 @@ import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 
 import com.app.quiz.model.User;
+import com.app.quiz.model.Question;
+import com.app.quiz.service.QuestionsService;
 import com.app.quiz.service.QuizUserDetailsService;
 
 @Controller
 public class QuizController {
 
+    private final QuestionsService questionsService;
     private final QuizUserDetailsService userDetailsService;
     private final AuthenticationManager authenticationManager;
 
-    public QuizController(QuizUserDetailsService userDetailsService, AuthenticationManager authenticationManager) {
+    public QuizController(QuestionsService questionsService, QuizUserDetailsService userDetailsService,
+            AuthenticationManager authenticationManager) {
+        this.questionsService = questionsService;
         this.userDetailsService = userDetailsService;
         this.authenticationManager = authenticationManager;
     }
@@ -100,6 +108,58 @@ public class QuizController {
         // Redirect to the /login endpoint
         return "redirect:/login?success";
 
+    }
+
+    @GetMapping("/add-quiz")
+    public String addQuiz(Model model) {
+        model.addAttribute("quiz", new Question()); // Add a new Quiz object to the model
+        return "add-quiz"; // Return the add-quiz.html template
+    }
+
+    @PostMapping("/add-quiz")
+    public String saveQuiz(@ModelAttribute Question quiz, Model model) {
+        // Logic to save the quiz to the database (e.g., quizService.save(quiz))
+        // Save the quiz using the appropriate service
+        boolean success = questionsService.addQuiz(quiz);
+
+        if (!success) {
+            model.addAttribute("error", "An error occurred while saving the quiz.");
+            return "add-quiz"; // Return to the add-quiz page if there was an error
+        }
+
+        return "redirect:/home"; // Redirect to the home page after saving the quiz
+    }
+
+    @GetMapping("/edit-quiz/{id}")
+    public String editQuiz(@PathVariable int id, Model model) {
+        Question quiz = questionsService.getQuizById(id);
+        if (quiz == null) {
+            return "redirect:/home"; // Redirect to home if the quiz is not found
+        }
+        model.addAttribute("quiz", quiz);
+        return "edit-quiz"; // Return the edit-quiz.html template
+    }
+
+    @PutMapping("/edit-quiz")
+    public String updateQuiz(@ModelAttribute Question quiz, Model model) {
+        // Logic to update the quiz in the database (e.g., quizService.update(quiz))
+        boolean success = questionsService.editQuiz(quiz);
+        if (!success) {
+            model.addAttribute("error", "An error occurred while updating the quiz.");
+            return "edit-quiz"; // Return to the edit-quiz page if there was an error
+        }
+        return "redirect:/home"; // Redirect to the home page after updating the quiz
+    }
+
+    @DeleteMapping("/delete-quiz/{id}")
+    public String deleteQuiz(@PathVariable int id, Model model) {
+        // Logic to delete the quiz from the database (e.g., quizService.delete(id))
+        boolean success = questionsService.deleteQuiz(id);
+        if (!success) {
+            model.addAttribute("error", "An error occurred while deleting the quiz.");
+            return "redirect:/home?error"; // Redirect to home with an error message if there was an error
+        }
+        return "redirect:/home?success"; // Redirect to home with a success message after deleting the quiz
     }
 
 }
