@@ -34,7 +34,8 @@ public class QuizUserDetailsService implements UserDetailsService {
                 .build();
     }
 
-    public void registerUser(String username, String password, String email, String role) throws IllegalArgumentException {
+    public void registerUser(String username, String password, String email, String role)
+            throws IllegalArgumentException {
 
         if (users.containsKey(username)) {
             throw new IllegalArgumentException("User already exists: " + username);

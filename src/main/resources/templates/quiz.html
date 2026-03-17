@@ -54,6 +54,17 @@
             background-color: #1976D2; /* Darker blue on hover */
         }
 
+        /* Error and Success Messages */
+        .error {
+            color: red;
+            margin-top: 10px;
+        }
+
+        .success {
+            color: green;
+            margin-top: 10px;
+        }
+
     </style>
 </head>
 <body>
@@ -64,7 +75,7 @@
             <button type="submit" class="logout-button">Logout</button>
         </form>
     </div>
-    <form th:action="@{/submitQuiz}" method="post">
+    <form th:action="@{/submit-quiz}" method="post">
         <div th:each="quiz, iterStat : ${quizzes}" class="quiz-container">
             <div class="question" th:text="${'Question ' + (iterStat.index + 1) + ': ' + quiz.questionText}"></div>
             <div class="options">
@@ -76,6 +87,16 @@
                 </ul>
             </div>
         </div>
+        
+        <!-- Error Message -->
+        <div th:if="${param.error}" class="quiz-container error">
+            Invalid action. Please try again.
+        </div>
+        <!-- Success Message -->
+        <div th:if="${param.success}" class="quiz-container success">
+            Quiz submitted successfully!
+        </div>
+
         <button type="submit" class="submit-button">Submit Answers</button>
     </form>
 </body>

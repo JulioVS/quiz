@@ -42,14 +42,15 @@ public class QuestionsService {
         }, "Paris");
         questions.put(q1.getId(), q1);
 
-        Question q2 = new Question(getNextId(), "What is the largest planet in our solar system?", new ArrayList<String>() {
-            {
-                add("Earth");
-                add("Jupiter");
-                add("Mars");
-                add("Saturn");
-            }
-        }, "Jupiter");
+        Question q2 = new Question(getNextId(), "What is the largest planet in our solar system?",
+                new ArrayList<String>() {
+                    {
+                        add("Earth");
+                        add("Jupiter");
+                        add("Mars");
+                        add("Saturn");
+                    }
+                }, "Jupiter");
         questions.put(q2.getId(), q2);
 
         Question q3 = new Question(getNextId(), "What is the chemical symbol for water?", new ArrayList<String>() {

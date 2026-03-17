@@ -5,11 +5,14 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.DeleteMapping;
-import org.springframework.web.bind.annotation.ModelAttribute;
 import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.ModelAttribute;
 import org.springframework.ui.Model;
+import org.springframework.validation.BindingResult;
 
 import java.util.ArrayList;
+import java.util.Map;
 
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
@@ -20,6 +23,8 @@ import com.app.quiz.model.User;
 import com.app.quiz.model.Question;
 import com.app.quiz.service.QuestionsService;
 import com.app.quiz.service.QuizUserDetailsService;
+
+import jakarta.validation.Valid;
 
 @Controller
 public class QuizController {
@@ -87,7 +92,12 @@ public class QuizController {
     }
 
     @PostMapping("/register")
-    public String registerUser(@ModelAttribute User user, Model model) {
+    public String registerUser(@Valid @ModelAttribute User user, BindingResult bindingResult, Model model) {
+
+        // Check for validation errors
+        if (bindingResult.hasErrors()) {
+			return "register"; // Return to the form with error messages
+        }
 
         // Logic to save the user to the database (e.g., userService.save(user))
         // Save the user using the QuizUserDetailsService
@@ -125,7 +135,12 @@ public class QuizController {
     }
 
     @PostMapping("/add-quiz")
-    public String saveQuiz(@ModelAttribute Question quiz, Model model, Authentication authentication) {
+    public String saveQuiz(@Valid @ModelAttribute Question quiz, BindingResult bindingResult, Model model, Authentication authentication) {
+
+        // Check for validation errors
+        // if (bindingResult.hasErrors()) {
+		// 	return "add-quiz"; // Return to the form with error messages
+        // }
 
         // Get the auhtenticated user's role
         String role = authentication.getAuthorities().stream()
@@ -140,7 +155,7 @@ public class QuizController {
 
         // Logic to save the quiz to the database (e.g., quizService.save(quiz))
         quiz.setId(questionsService.getNextId());
-        
+
         // Save the quiz using the appropriate service
         boolean success = questionsService.addQuiz(quiz);
 
@@ -150,60 +165,106 @@ public class QuizController {
         }
 
         model.addAttribute("success", "Quiz added successfully!"); // Add a success message to the model
-        return "redirect:/home"; // Redirect to the home page after saving the quiz
+        return "redirect:/home?success"; // Redirect to the home page after saving the quiz
     }
 
     @GetMapping("/edit-quiz/{id}")
     public String editQuiz(@PathVariable int id, Model model) {
+
+        // Find the quiz by ID and add it to the model
         Question quiz = questionsService.getQuizById(id);
+
         if (quiz == null) {
-            return "redirect:/home"; // Redirect to home if the quiz is not found
+            model.addAttribute("error", "Quiz not found.");
+            return "redirect:/home?error"; // Redirect to home if the quiz is not found
         }
+
         model.addAttribute("quiz", quiz);
         return "edit-quiz"; // Return the edit-quiz.html template
+
     }
 
     @PutMapping("/edit-quiz")
-    public String updateQuiz(@ModelAttribute Question quiz, Model model) {
+    public String updateQuiz(@ModelAttribute Question quiz, Model model, Authentication authentication) {
+
+        // Get the authenticated user's role
+        String role = authentication.getAuthorities().stream()
+                .map(auth -> auth.getAuthority())
+                .findFirst()
+                .orElse("ROLE_USER"); // Default to ROLE_USER if no role is found
+
+        if (!"ROLE_ADMIN".equals(role)) {
+            model.addAttribute("error", "You do not have permission to edit a quiz.");
+            return "redirect:/home?error"; // Redirect to home with an error message if the user is not an admin
+        }
+
         // Logic to update the quiz in the database (e.g., quizService.update(quiz))
         boolean success = questionsService.editQuiz(quiz);
+
         if (!success) {
             model.addAttribute("error", "An error occurred while updating the quiz.");
-            return "edit-quiz"; // Return to the edit-quiz page if there was an error
+            return "redirect:/home?error"; // Redirect to home with an error message if there was an error
         }
-        return "redirect:/home"; // Redirect to the home page after updating the quiz
+
+        return "redirect:/home?success"; // Redirect to the home page after updating the quiz
+
     }
 
     @DeleteMapping("/delete-quiz/{id}")
-    public String deleteQuiz(@PathVariable int id, Model model) {
+    public String deleteQuiz(@PathVariable int id, Model model, Authentication authentication) {
+
+        // Get the authenticated user's role
+        String role = authentication.getAuthorities().stream()
+                .map(auth -> auth.getAuthority())
+                .findFirst()
+                .orElse("ROLE_USER"); // Default to ROLE_USER if no role is found
+
+        if (!"ROLE_ADMIN".equals(role)) {
+            model.addAttribute("error", "You do not have permission to delete a quiz.");
+            return "redirect:/home?error"; // Redirect to home with an error message if the user is not an admin
+        }
+
         // Logic to delete the quiz from the database (e.g., quizService.delete(id))
         boolean success = questionsService.deleteQuiz(id);
+
         if (!success) {
             model.addAttribute("error", "An error occurred while deleting the quiz.");
             return "redirect:/home?error"; // Redirect to home with an error message if there was an error
         }
-        return "redirect:/home?success"; // Redirect to home with a success message after deleting the quiz
-    }
 
-    @GetMapping("/take-quiz")
-    public String takeQuiz(Model model) {
-        model.addAttribute("quizzes", questionsService.getAllQuizzes()); // Add a list of quizzes to the model
-        return "take-quiz"; // Return the take-quiz.html template
+        return "redirect:/home?success"; // Redirect to home with a success message after deleting the quiz
+
     }
 
     @PostMapping("/submit-quiz")
-    public String submitQuiz(@ModelAttribute Question quiz, Model model) {
-        // Logic to evaluate the quiz answers and calculate the score
-        // For demonstration, we will just return a success message
-        model.addAttribute("message", "Quiz submitted successfully! Your score is: 100%");
-        return "quiz-result"; // Return the quiz-result.html template to display the result
-    }
+    public String submitQuiz(@RequestParam Map<String, String> allParams, Model model) {
 
-    @GetMapping("/results")
-    public String viewResults(Model model) {
-        // Logic to retrieve and display quiz results
-        // model.addAttribute("results", questionsService.getAllResults());
-        return "results"; // Return the results.html template to display the results
+        int correctAnswers = 0;
+
+        ArrayList<String> userAnswers = new ArrayList<>();
+        ArrayList<Question> quizzes = questionsService.getAllQuizzes();
+
+        // Iterate through the quizzes and compare answers
+        for (int i = 0; i < quizzes.size(); i++) {
+
+            String userAnswer = allParams.get("answer" + i); // Get the answer for question i
+            userAnswers.add(userAnswer); // Store user's answer
+
+            if (quizzes.get(i).getCorrectAnswer().equals(userAnswer)) {
+                correctAnswers++;
+            }
+
+        }
+
+        // Add data to the model
+        model.addAttribute("quizzes", quizzes);
+        model.addAttribute("userAnswers", userAnswers);
+        model.addAttribute("correctAnswers", correctAnswers);
+        model.addAttribute("totalQuestions", quizzes.size());
+
+        // Return the result template
+        return "result";
+
     }
 
 }

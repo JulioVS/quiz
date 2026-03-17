@@ -82,6 +82,18 @@
         .logout-button:hover {
             background-color: #1976D2; /* Darker blue on hover */
         }
+
+        /* Error and Success Messages */
+        .error {
+            color: red;
+            margin-top: 10px;
+        }
+
+        .success {
+            color: green;
+            margin-top: 10px;
+        }
+
     </style>
 </head>
 <body>
@@ -95,7 +107,7 @@
 
     <!-- Add Quiz Button -->
     <div style="padding: 20px;">
-        <a th:href="@{/addQuiz}">
+        <a th:href="@{/add-quiz}">
             <button class="add-quiz-button">Add Quiz</button>
         </a>
     </div>
@@ -111,14 +123,28 @@
             </div>
             <div class="correct-answer" th:text="${'Correct Answer: ' + quiz.correctAnswer}"></div>
             <!-- Edit Button -->
-            <a th:href="@{/editQuiz/{id}(id=${quiz.id})}">
+            <a th:href="@{/edit-quiz/{id}(id=${quiz.id})}">
                 <button class="edit-quiz-button">Edit Quiz</button>
             </a>
             <!-- Delete Button -->
-            <a th:href="@{/deleteQuiz/{id}(id=${quiz.id})}">
-                <button class="delete-quiz-button">Delete Quiz</button>
-            </a>
+            <form th:action="@{/delete-quiz/{id}(id=${quiz.id})}" th:method="delete">
+                <button type="submit" class="delete-quiz-button">Delete Quiz</button>
+            </form>
         </div>
     </div>
+
+    <div style="padding: 20px;">
+        <div class="quiz-container">
+            <!-- Error Message -->
+            <div th:if="${param.error}" class="error">
+                Invalid action. Please try again.
+            </div>
+            <!-- Success Message -->
+            <div th:if="${param.success}" class="success">
+                Quizzes successfully updated!
+            </div>
+        </div>
+    </div>
+
 </body>
 </html>

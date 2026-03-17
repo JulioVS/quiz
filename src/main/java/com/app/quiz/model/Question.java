@@ -2,17 +2,26 @@ package com.app.quiz.model;
 
 import java.util.ArrayList;
 
+import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.Size;
+
 public class Question {
 
     private int id;
+
+    @Size(min = 10, message = "Question text must be at least 10 characters long")
     private String questionText;
+
+    @Size(min = 2, message = "There must be at least 2 options")
     private ArrayList<String> options = new ArrayList<>();
+
+    @NotBlank(message = "Correct answer cannot be blank")
     private String correctAnswer;
 
     public Question() {
         // Default constructor
     }
-    
+
     public Question(int id, String questionText, ArrayList<String> options, String correctAnswer) {
         this.id = id;
         this.questionText = questionText;
@@ -66,6 +75,10 @@ public class Question {
 
         return sb.toString();
 
+    }
+
+    public String getOptionsAsString() {
+        return String.join(", ", options);
     }
 
 }

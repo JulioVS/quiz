@@ -92,7 +92,7 @@
         <div class="form-header">Edit Quiz</div>
 
         <!-- Form -->
-        <form th:action="@{/editQuestion}" method="post" th:object="${quiz}">
+        <form th:action="@{/edit-quiz}" th:method="put" th:object="${quiz}">
             <!-- Hidden field for quiz ID -->
             <input type="hidden" th:field="*{id}" />
 
